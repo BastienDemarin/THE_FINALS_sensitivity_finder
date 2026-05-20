@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>THE FINALS - Sensitivity Calculator</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family: Arial, Helvetica, sans-serif;
+    background:
+        radial-gradient(circle at top, #ffb34722, transparent 40%),
+        linear-gradient(135deg, #0f1115, #171a21);
+    color:white;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
+
+.container{
+    width:100%;
+    max-width:500px;
+    background:rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:24px;
+    padding:40px;
+    box-shadow:
+        0 0 40px rgba(0,0,0,0.4),
+        0 0 80px rgba(255,140,0,0.08);
+}
+
+.logo{
+    font-size:14px;
+    letter-spacing:4px;
+    color:#ffb347;
+    margin-bottom:10px;
+    font-weight:bold;
+}
+
+h1{
+    font-size:36px;
+    margin-bottom:10px;
+}
+
+.subtitle{
+    color:#9ca3af;
+    margin-bottom:30px;
+    line-height:1.5;
+}
+
+.input-group{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-bottom:25px;
+}
+
+label{
+    font-size:14px;
+    color:#d1d5db;
+}
+
+input{
+    width:100%;
+    padding:16px;
+    border-radius:14px;
+    border:none;
+    outline:none;
+    background:#1f2937;
+    color:white;
+    font-size:18px;
+    transition:0.2s;
+}
+
+input:focus{
+    box-shadow:0 0 0 2px #ffb347;
+}
+
+button{
+    width:100%;
+    padding:16px;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(135deg,#ffb347,#ff8c00);
+    color:black;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+button:hover{
+    transform:translateY(-2px);
+    box-shadow:0 10px 25px rgba(255,140,0,0.3);
+}
+
+.result-card{
+    margin-top:30px;
+    background:#111827;
+    border-radius:18px;
+    padding:25px;
+    display:none;
+    animation:fadeIn 0.3s ease;
+}
+
+.result-title{
+    color:#ffb347;
+    margin-bottom:20px;
+    font-size:18px;
+    font-weight:bold;
+}
+
+.result-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+}
+
+.result-item{
+    background:#1f2937;
+    padding:18px;
+    border-radius:14px;
+}
+
+.result-label{
+    font-size:13px;
+    color:#9ca3af;
+    margin-bottom:8px;
+}
+
+.result-value{
+    font-size:28px;
+    font-weight:bold;
+}
+
+.error{
+    margin-top:20px;
+    color:#9ca3af;
+    font-size:14px;
+}
+
+@keyframes fadeIn{
+    from{
+        opacity:0;
+        transform:translateY(10px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+.footer{
+    margin-top:25px;
+    text-align:center;
+    color:#6b7280;
+    font-size:12px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="logo">THE FINALS</div>
+
+    <h1>Sensitivity Calculator</h1>
+
+    <p class="subtitle">
+        Find your DPI and sensitivity values according to the desired cm/360.
+    </p>
+
+    <div class="input-group">
+        <label>cm/360</label>
+        <input
+            id="cm360"
+            type="number"
+            step="0.1"
+            placeholder="Example : 40"
+        />
+    </div>
+
+    <button onclick="calculate()">
+        Compute
+    </button>
+
+    <div class="result-card" id="resultCard">
+
+        <div class="result-title">
+            Best match
+        </div>
+
+        <div class="result-grid">
+
+            <div class="result-item">
+                <div class="result-label">DPI</div>
+                <div class="result-value" id="dpiResult">-</div>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">Sensitivity</div>
+                <div class="result-value" id="sensResult">-</div>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">Real cm/360</div>
+                <div class="result-value" id="cmResult">-</div>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">Error</div>
+                <div class="result-value" id="errorResult">-</div>
+            </div>
+
+        </div>
+
+        <div class="footer">
+            DPI from 800 to 12800 • increment of 10
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+function findBestSensitivity(targetCm360) {
+
+    const CONSTANT = 914400;
+
+    let best = null;
+
+    for (let dpi = 800; dpi <= 12800; dpi += 10) {
+
+        const idealSens = CONSTANT / (targetCm360 * dpi);
+
+        const sens = Math.round(idealSens);
+
+        if (sens < 1 || sens > 100) {
+            continue;
+        }
+
+        const realCm360 = CONSTANT / (dpi * sens);
+
+        const error = Math.abs(realCm360 - targetCm360);
+
+        if (!best || error < best.error) {
+
+            best = {
+                dpi,
+                sensitivity: sens,
+                cm360: realCm360,
+                error
+            };
+        }
+    }
+
+    return best;
+}
+
+function calculate() {
+
+    const cm360 = parseFloat(
+        document.getElementById("cm360").value
+    );
+
+    if (!cm360 || cm360 <= 0) {
+        alert("Please enter a valid value.");
+        return;
+    }
+
+    const result = findBestSensitivity(cm360);
+
+    document.getElementById("resultCard").style.display = "block";
+
+    document.getElementById("dpiResult").textContent =
+        result.dpi;
+
+    document.getElementById("sensResult").textContent =
+        result.sensitivity;
+
+    document.getElementById("cmResult").textContent =
+        result.cm360.toFixed(2);
+
+    document.getElementById("errorResult").textContent =
+        result.error.toFixed(4);
+}
+
+</script>
+
+</body>
+</html>
