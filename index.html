@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>THE FINALS - Sensitivity Calculator</title>
-<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon32.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
@@ -57,15 +57,70 @@ h1{
 
 .subtitle{
     color:#9ca3af;
-    margin-bottom:30px;
+    margin-bottom:24px;
     line-height:1.5;
+}
+
+/* --- Mode Toggle --- */
+.mode-toggle{
+    display:flex;
+    background:#111827;
+    border-radius:14px;
+    padding:4px;
+    margin-bottom:28px;
+    position:relative;
+}
+
+.mode-toggle-slider{
+    position:absolute;
+    top:4px;
+    left:4px;
+    width:calc(50% - 4px);
+    height:calc(100% - 8px);
+    background:linear-gradient(135deg,#ffb347,#ff8c00);
+    border-radius:10px;
+    transition:transform 0.25s cubic-bezier(.4,0,.2,1);
+    z-index:0;
+}
+
+.mode-toggle.reverse .mode-toggle-slider{
+    transform:translateX(calc(100% + 0px));
+}
+
+.mode-btn{
+    flex:1;
+    padding:11px 0;
+    border:none;
+    background:transparent;
+    color:#9ca3af;
+    font-size:14px;
+    font-weight:bold;
+    cursor:pointer;
+    border-radius:10px;
+    position:relative;
+    z-index:1;
+    transition:color 0.2s;
+    letter-spacing:0.5px;
+}
+
+.mode-btn.active{
+    color:#000;
+}
+
+/* --- Panels --- */
+.panel{
+    display:none;
+}
+.panel.active{
+    display:block;
+    animation:fadeIn 0.3s ease;
 }
 
 .input-group{
     display:flex;
     flex-direction:column;
     gap:10px;
-    margin-bottom:25px;
+    margin-bottom:20px;
 }
 
 label{
@@ -89,7 +144,7 @@ input:focus{
     box-shadow:0 0 0 2px #ffb347;
 }
 
-button{
+button.compute-btn{
     width:100%;
     padding:16px;
     border:none;
@@ -102,11 +157,12 @@ button{
     transition:0.2s;
 }
 
-button:hover{
+button.compute-btn:hover{
     transform:translateY(-2px);
     box-shadow:0 10px 25px rgba(255,140,0,0.3);
 }
 
+/* --- Result cards --- */
 .result-card{
     margin-top:30px;
     background:#111827;
@@ -129,6 +185,10 @@ button:hover{
     gap:15px;
 }
 
+.result-grid.single{
+    grid-template-columns:1fr;
+}
+
 .result-item{
     background:#1f2937;
     padding:18px;
@@ -146,10 +206,9 @@ button:hover{
     font-weight:bold;
 }
 
-.error{
-    margin-top:20px;
-    color:#9ca3af;
-    font-size:14px;
+.result-value.highlight{
+    color:#ffb347;
+    font-size:36px;
 }
 
 @keyframes fadeIn{
@@ -178,130 +237,167 @@ button:hover{
 <div class="container">
 
     <div class="logo">THE FINALS</div>
-
     <h1>Sensitivity Calculator</h1>
-
-    <p class="subtitle">
+    <p class="subtitle" id="subtitleText">
         Find your DPI and sensitivity values according to the desired cm/360.
     </p>
 
-    <div class="input-group">
-        <label>cm/360</label>
-        <input
-            id="cm360"
-            type="number"
-            step="0.1"
-            placeholder="Example : 40"
-        />
+    <!-- Toggle -->
+    <div class="mode-toggle" id="modeToggle">
+        <div class="mode-toggle-slider"></div>
+        <button class="mode-btn active" id="btnForward" onclick="switchMode('forward')">cm/360 → DPI & Sens</button>
+        <button class="mode-btn" id="btnReverse" onclick="switchMode('reverse')">DPI & Sens → cm/360</button>
     </div>
 
-    <button onclick="calculate()">
-        Compute
-    </button>
-
-    <div class="result-card" id="resultCard">
-
-        <div class="result-title">
-            Best match
+    <!-- Panel Forward -->
+    <div class="panel active" id="panelForward">
+        <div class="input-group">
+            <label>cm/360</label>
+            <input id="cm360" type="number" step="0.1" placeholder="Example : 40" />
         </div>
+        <button class="compute-btn" onclick="calculateForward()">Compute</button>
 
-        <div class="result-grid">
-
-            <div class="result-item">
-                <div class="result-label">DPI</div>
-                <div class="result-value" id="dpiResult">-</div>
+        <div class="result-card" id="resultCardForward">
+            <div class="result-title">Best match</div>
+            <div class="result-grid">
+                <div class="result-item">
+                    <div class="result-label">DPI</div>
+                    <div class="result-value" id="dpiResult">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Sensitivity</div>
+                    <div class="result-value" id="sensResult">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Real cm/360</div>
+                    <div class="result-value" id="cmResult">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Error</div>
+                    <div class="result-value" id="errorResult">-</div>
+                </div>
             </div>
-
-            <div class="result-item">
-                <div class="result-label">Sensitivity</div>
-                <div class="result-value" id="sensResult">-</div>
-            </div>
-
-            <div class="result-item">
-                <div class="result-label">Real cm/360</div>
-                <div class="result-value" id="cmResult">-</div>
-            </div>
-
-            <div class="result-item">
-                <div class="result-label">Error</div>
-                <div class="result-value" id="errorResult">-</div>
-            </div>
-
+            <div class="footer">DPI from 800 to 12800 • increment of 10</div>
         </div>
+    </div>
 
-        <div class="footer">
-            DPI from 800 to 12800 • increment of 10
+    <!-- Panel Reverse -->
+    <div class="panel" id="panelReverse">
+        <div class="input-group">
+            <label>DPI</label>
+            <input id="dpiInput" type="number" step="1" placeholder="Example : 800" />
         </div>
+        <div class="input-group">
+            <label>Sensitivity</label>
+            <input id="sensInput" type="number" step="0.1" placeholder="Example : 5" />
+        </div>
+        <button class="compute-btn" onclick="calculateReverse()">Compute</button>
 
+        <div class="result-card" id="resultCardReverse">
+            <div class="result-title">Result</div>
+            <div class="result-grid">
+                <div class="result-item">
+                    <div class="result-label">DPI</div>
+                    <div class="result-value" id="dpiDisplay">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Sensitivity</div>
+                    <div class="result-value" id="sensDisplay">-</div>
+                </div>
+            </div>
+            <div style="margin-top:15px;">
+                <div class="result-item">
+                    <div class="result-label">cm/360</div>
+                    <div class="result-value highlight" id="cm360Result">-</div>
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>
 
 <script>
 
+const CONSTANT = 914400;
+
+/* ---- Mode switch ---- */
+function switchMode(mode) {
+    const toggle   = document.getElementById('modeToggle');
+    const fwdPanel = document.getElementById('panelForward');
+    const revPanel = document.getElementById('panelReverse');
+    const btnFwd   = document.getElementById('btnForward');
+    const btnRev   = document.getElementById('btnReverse');
+    const subtitle = document.getElementById('subtitleText');
+
+    if (mode === 'forward') {
+        toggle.classList.remove('reverse');
+        fwdPanel.classList.add('active');
+        revPanel.classList.remove('active');
+        btnFwd.classList.add('active');
+        btnRev.classList.remove('active');
+        subtitle.textContent = 'Find your DPI and sensitivity values according to the desired cm/360.';
+    } else {
+        toggle.classList.add('reverse');
+        revPanel.classList.add('active');
+        fwdPanel.classList.remove('active');
+        btnRev.classList.add('active');
+        btnFwd.classList.remove('active');
+        subtitle.textContent = 'Calculate your cm/360 from your current DPI and sensitivity.';
+    }
+}
+
+/* ---- Forward: cm/360 → DPI & Sens ---- */
 function findBestSensitivity(targetCm360) {
-
-    const CONSTANT = 914400;
-
     let best = null;
-
     for (let dpi = 800; dpi <= 12800; dpi += 10) {
-
         const idealSens = CONSTANT / (targetCm360 * dpi);
-
         const sens = Math.round(idealSens);
-
-        if (sens < 1 || sens > 100) {
-            continue;
-        }
-
+        if (sens < 1 || sens > 100) continue;
         const realCm360 = CONSTANT / (dpi * sens);
-
         const error = Math.abs(realCm360 - targetCm360);
-
         if (!best || error < best.error) {
-
-            best = {
-                dpi,
-                sensitivity: sens,
-                cm360: realCm360,
-                error
-            };
+            best = { dpi, sensitivity: sens, cm360: realCm360, error };
         }
     }
-
     return best;
 }
 
-function calculate() {
-
-    const cm360 = parseFloat(
-        document.getElementById("cm360").value
-    );
-
+function calculateForward() {
+    const cm360 = parseFloat(document.getElementById('cm360').value);
     if (!cm360 || cm360 <= 0) {
-        alert("Please enter a valid value.");
+        alert('Please enter a valid value.');
+        return;
+    }
+    const result = findBestSensitivity(cm360);
+    if (!result) {
+        alert('No valid combination found for this value.');
+        return;
+    }
+    document.getElementById('resultCardForward').style.display = 'block';
+    document.getElementById('dpiResult').textContent  = result.dpi;
+    document.getElementById('sensResult').textContent = result.sensitivity;
+    document.getElementById('cmResult').textContent   = result.cm360.toFixed(2);
+    document.getElementById('errorResult').textContent = result.error.toFixed(4);
+}
+
+/* ---- Reverse: DPI & Sens → cm/360 ---- */
+function calculateReverse() {
+    const dpi  = parseFloat(document.getElementById('dpiInput').value);
+    const sens = parseFloat(document.getElementById('sensInput').value);
+
+    if (!dpi || dpi <= 0 || !sens || sens <= 0) {
+        alert('Please enter valid DPI and sensitivity values.');
         return;
     }
 
-    const result = findBestSensitivity(cm360);
+    const cm360 = CONSTANT / (dpi * sens);
 
-    document.getElementById("resultCard").style.display = "block";
-
-    document.getElementById("dpiResult").textContent =
-        result.dpi;
-
-    document.getElementById("sensResult").textContent =
-        result.sensitivity;
-
-    document.getElementById("cmResult").textContent =
-        result.cm360.toFixed(2);
-
-    document.getElementById("errorResult").textContent =
-        result.error.toFixed(4);
+    document.getElementById('resultCardReverse').style.display = 'block';
+    document.getElementById('dpiDisplay').textContent  = dpi;
+    document.getElementById('sensDisplay').textContent = sens;
+    document.getElementById('cm360Result').textContent = cm360.toFixed(2) + ' cm';
 }
 
 </script>
-
 </body>
 </html>
